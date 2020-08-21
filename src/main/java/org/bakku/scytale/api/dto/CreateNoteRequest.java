@@ -6,11 +6,15 @@ import javax.validation.constraints.Pattern;
 public class CreateNoteRequest {
     @NotNull(message = "identifier must be present")
     @Pattern(regexp = "^[A-Za-z_-]+", message = "identifier must only contain letters, underscores, and hyphens")
-    private final String identifier;
+    private String identifier;
     @NotNull(message = "content must be present")
-    private final String content;
+    private String content;
     @NotNull(message = "accessKey must be present")
-    private final String accessKey;
+    private String accessKey;
+
+    public CreateNoteRequest() {
+
+    }
 
     public CreateNoteRequest(String identifier, String content, String accessKey) {
         this.identifier = identifier;

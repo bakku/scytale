@@ -1,7 +1,9 @@
 package org.bakku.scytale.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.bakku.scytale.api.dto.AuthNoteRequest;
 import org.bakku.scytale.api.dto.CreateNoteRequest;
+import org.bakku.scytale.models.Note;
 import org.bakku.scytale.persistency.NoteRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.encrypt.Encryptors;
+import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -99,5 +102,75 @@ public class NotesControllerTest {
             result.getResponse().getContentAsString(),
             "{\"errors\":[\"identifier is already taken\"]}"
         );
+    }
+
+    @Test
+    public void postAuth_should_returnCorrectContent() throws Exception {
+        var plaintextKey = "pass";
+        var plaintextContent = "secret";
+        var salt = KeyGenerators.string().generateKey();
+        var encryptedContent = Encryptors.text(plaintextKey, salt).encrypt(plaintextContent);
+        var hashedKey = (new BCryptPasswordEncoder()).encode(plaintextKey);
+
+        var note = new Note("test-note", encryptedContent, hashedKey, salt);
+        noteRepository.save(note);
+
+        this.mockMvc.perform(post("/api/notes/test-note/auth")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AuthNoteRequest("pass"))))
+            .andExpect(status().isOk())
+            .andExpect(content().string("{\"content\":\"secret\"}"));
+    }
+
+    @Test
+    public void postAuth_should_notReturnContentIfKeyIsFalse() throws Exception {
+        var plaintextKey = "pass";
+        var plaintextContent = "secret";
+        var salt = KeyGenerators.string().generateKey();
+        var encryptedContent = Encryptors.text(plaintextKey, salt).encrypt(plaintextContent);
+        var hashedKey = (new BCryptPasswordEncoder()).encode(plaintextKey);
+
+        var note = new Note("test-note", encryptedContent, hashedKey, salt);
+        noteRepository.save(note);
+
+        this.mockMvc.perform(post("/api/notes/test-note/auth")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AuthNoteRequest("passx"))))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    public void postAuth_should_returnNotFoundIfIdentifierDoesNotExist() throws Exception {
+        var plaintextKey = "pass";
+        var plaintextContent = "secret";
+        var salt = KeyGenerators.string().generateKey();
+        var encryptedContent = Encryptors.text(plaintextKey, salt).encrypt(plaintextContent);
+        var hashedKey = (new BCryptPasswordEncoder()).encode(plaintextKey);
+
+        var note = new Note("test-note", encryptedContent, hashedKey, salt);
+        noteRepository.save(note);
+
+        this.mockMvc.perform(post("/api/notes/test-notex/auth")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AuthNoteRequest("pass"))))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void postAuth_should_validateRequest() throws Exception {
+        var plaintextKey = "pass";
+        var plaintextContent = "secret";
+        var salt = KeyGenerators.string().generateKey();
+        var encryptedContent = Encryptors.text(plaintextKey, salt).encrypt(plaintextContent);
+        var hashedKey = (new BCryptPasswordEncoder()).encode(plaintextKey);
+
+        var note = new Note("test-note", encryptedContent, hashedKey, salt);
+        noteRepository.save(note);
+
+        this.mockMvc.perform(post("/api/notes/test-notex/auth")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(new AuthNoteRequest(null))))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string("{\"errors\":[\"accessKey must be present\"]}"));
     }
 }

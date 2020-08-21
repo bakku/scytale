@@ -1,18 +1,17 @@
 package org.bakku.scytale.api;
 
+import org.bakku.scytale.api.dto.AuthNoteRequest;
 import org.bakku.scytale.api.dto.CreateNoteRequest;
 import org.bakku.scytale.exceptions.NoteIdentifierNotUniqueException;
 import org.bakku.scytale.models.Note;
 import org.bakku.scytale.persistency.NoteRepository;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.encrypt.Encryptors;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.context.request.WebRequest;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -40,6 +39,25 @@ public class NotesController {
             noteRepository.save(note);
         } catch (DataIntegrityViolationException ex) {
             throw new NoteIdentifierNotUniqueException();
+        }
+    }
+
+    @PostMapping(path = "/{identifier}/auth")
+    public ResponseEntity<Map<String, String>> authorizeNote(@Valid @RequestBody AuthNoteRequest authNoteRequest, @PathVariable String identifier) {
+        var note = noteRepository.findByIdentifier(identifier);
+        var bcrypt = new BCryptPasswordEncoder();
+
+        if (note.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if(bcrypt.matches(authNoteRequest.getAccessKey(), note.get().getAccessKey())) {
+            var plaintextContent = Encryptors.text(authNoteRequest.getAccessKey(), note.get().getEncryptedContentSalt())
+                .decrypt(note.get().getContent());
+
+            return new ResponseEntity<>(Map.of("content", plaintextContent), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
