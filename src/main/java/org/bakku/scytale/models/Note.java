@@ -19,6 +19,9 @@ public class Note {
     @Column(name = "access_key")
     private String accessKey;
 
+    @Column(name = "encrypted_content_salt")
+    private String encryptedContentSalt;
+
     @Column(name = "created_at")
     @CreationTimestamp
     private LocalDateTime createdAt;
@@ -29,10 +32,11 @@ public class Note {
 
     Note() {}
 
-    public Note(String identifier, String content, String accessKey) {
+    public Note(String identifier, String content, String accessKey, String encryptedContentSalt) {
         this.identifier = identifier;
         this.content = content;
         this.accessKey = accessKey;
+        this.encryptedContentSalt = encryptedContentSalt;
     }
 
     public Long getId() {
@@ -49,6 +53,10 @@ public class Note {
 
     public String getAccessKey() {
         return accessKey;
+    }
+
+    public String getEncryptedContentSalt() {
+        return encryptedContentSalt;
     }
 
     public LocalDateTime getCreatedAt() {
