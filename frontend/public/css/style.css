@@ -1,0 +1,9 @@
+.identifier-input-wrapper {
+    height: calc(100vh - 52px);
+    display: flex;
+    align-items: center;
+}
+
+.is-fullwidth {
+    width: 100%;
+}

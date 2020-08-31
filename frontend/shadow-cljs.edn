@@ -1,11 +1,17 @@
 ;; shadow-cljs configuration
 {:source-paths
- ["src/dev"
-  "src/main"
-  "src/test"]
+ ["src"]
 
  :dependencies
- []
+ [[reagent "1.0.0-alpha2"]
+  [cljs-ajax "0.8.1"]
+  [funcool/promesa "5.1.0"]]
+
+ :dev-http {8081 "public"}
 
  :builds
- {}}
+ {:frontend
+  {:target :browser
+   :modules {:main {:init-fn scytale.core/main}}
+   :release {:closure-defines {scytale.api/BASEURL
+                               "https://scytale-api.bakku.dev"}}}}}
