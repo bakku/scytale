@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(path = "/api/notes", produces = "application/json", consumes = "application/json")
+@CrossOrigin
+@RequestMapping(path = "/api/notes", produces = "application/json")
 public class NotesController {
     private final NoteRepository noteRepository;
 
@@ -26,7 +27,7 @@ public class NotesController {
         this.noteRepository = noteRepository;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "application/json")
     @ResponseStatus(HttpStatus.CREATED)
     public void createNote(@Valid @RequestBody CreateNoteRequest createNoteRequest) throws NoteIdentifierNotUniqueException {
         var salt = KeyGenerators.string().generateKey();
@@ -42,7 +43,7 @@ public class NotesController {
         }
     }
 
-    @PostMapping(path = "/{identifier}/auth")
+    @PostMapping(path = "/{identifier}/auth", consumes = "application/json")
     public ResponseEntity<Map<String, String>> authorizeNote(@Valid @RequestBody AuthNoteRequest authNoteRequest, @PathVariable String identifier) {
         var note = noteRepository.findByIdentifier(identifier);
         var bcrypt = new BCryptPasswordEncoder();
@@ -58,6 +59,13 @@ public class NotesController {
             return new ResponseEntity<>(Map.of("content", plaintextContent), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @GetMapping(path = "/{identifier}/exists")
+    public void checkExistenceOfIdentifier(@PathVariable String identifier) throws NoteIdentifierNotUniqueException {
+        if (noteRepository.findByIdentifier(identifier).isPresent()) {
+            throw new NoteIdentifierNotUniqueException();
         }
     }
 

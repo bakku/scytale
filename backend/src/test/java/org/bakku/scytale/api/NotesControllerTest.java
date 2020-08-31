@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -172,5 +173,19 @@ public class NotesControllerTest {
             .content(objectMapper.writeValueAsString(new AuthNoteRequest(null))))
             .andExpect(status().isBadRequest())
             .andExpect(content().string("{\"errors\":[\"accessKey must be present\"]}"));
+    }
+
+    @Test
+    public void getExists_should_returnOkIfIdentifierIsNotTaken() throws Exception {
+        this.mockMvc.perform(get("/api/notes/test-note/exists"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    public void getExists_should_returnBadRequestIfIdentifierIsTaken() throws Exception {
+        noteRepository.save(new Note("test-note", "bla", "bla", "bla"));
+
+        this.mockMvc.perform(get("/api/notes/test-note/exists"))
+            .andExpect(status().isBadRequest());
     }
 }
